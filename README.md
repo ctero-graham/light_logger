@@ -3,7 +3,7 @@ light_logger is a very light golang library which supports rotation of log files
 
 Usage
 =====
-Simple logging like this:
+Simply logging like this:
 ```golang
 light_logger.Error(msg...)    //  log error level messages
 light_logger.Debug(msg...)    //  log debug level messages
