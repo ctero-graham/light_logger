@@ -14,7 +14,7 @@ type lightLogger struct {
     Flag   int
 }
 
-func NewLogger(prefix string) *lightLogger {
+func newLogger(prefix string) *lightLogger {
     logger := &lightLogger{
         Flag:   log.Ldate | log.Ltime | log.Lshortfile,
         File:   os.Stdout,

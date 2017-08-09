@@ -48,10 +48,10 @@ var (
 //  init creates channels as well as loggers, and then start a goroutine to do the real logging.
 func init() {
     //  log to stdout by default.
-    debugLogger = NewLogger("[DEBUG]")
-    infoLogger = NewLogger("[INFO]")
-    warnLogger = NewLogger("[WARN]")
-    errorLogger = NewLogger("[ERROR]")
+    debugLogger = newLogger("[DEBUG]")
+    infoLogger = newLogger("[INFO]")
+    warnLogger = newLogger("[WARN]")
+    errorLogger = newLogger("[ERROR]")
 
     logsMap = map[int]*lightLogger{
         LEVEL_DEBUG: debugLogger,
@@ -144,7 +144,6 @@ func Info(data ... interface{}) {
 
 //  logTo logs a given message to the specified logger.
 func logTo(logger *lightLogger, data ... interface{}) {
-    fmt.Println("log to ", data)
     if logger.Flag&(log.Lshortfile|log.Llongfile) != 0 {
         _, file, line, _ := runtime.Caller(2)
         if logger.Flag&log.Lshortfile != 0 {
