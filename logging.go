@@ -65,6 +65,7 @@ func init() {
 
 //  startLogging starts to listening to the channels and do the logging, it is supposed to be called in a goroutine.
 func startLogging() {
+    fmt.Println("timer started")
     setTimer()
     for {
         select {
@@ -77,6 +78,7 @@ func startLogging() {
         case logs := <-errorLogger.C:
             errorLogger.Logger.Println(logs...)
         case <-timer.C:
+            fmt.Println("rotates started")
             rotate()
         }
     }
@@ -106,6 +108,7 @@ func SetLogFile(level int, filePath, prefix string, flag int) error {
 
 //  resetLogger specifies a file to log to, a prefix and a flag of the logger for a logger.
 func resetLogger(logger *lightLogger, f *os.File, prefix string, flag int) {
+    logger.File = f
     logger.Logger.SetOutput(f)
     if prefix != "" {
         logger.Logger.SetPrefix(prefix)
@@ -177,6 +180,7 @@ func rotate() {
             SetLogFile(k, filePath, "", -1)
         }
     }
+    setTimer()  //  定下一次的闹钟
 }
 
 //  setTimer will call setNextTimer to set a timer which will trigger the next rotation work.
