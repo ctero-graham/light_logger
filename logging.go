@@ -177,10 +177,10 @@ func rotate() {
             v.File.Close()
             v.File = nil
             os.Rename(filePath, filePath+"."+now)
-            SetLogFile(k, filePath, "", -1)
+            SetLogFile(k, filePath, v.Logger.Prefix(), v.Logger.Flags())
         }
     }
-    setTimer()  //  定下一次的闹钟
+    setTimer() //  定下一次的闹钟
 }
 
 //  setTimer will call setNextTimer to set a timer which will trigger the next rotation work.
