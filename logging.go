@@ -177,7 +177,7 @@ func rotate() {
             v.File.Close()
             v.File = nil
             os.Rename(filePath, filePath+"."+now)
-            SetLogFile(k, filePath, v.Logger.Prefix(), v.Logger.Flags())
+            SetLogFile(k, filePath, v.Logger.Prefix(), v.Flag)
         }
     }
     setTimer() //  定下一次的闹钟
