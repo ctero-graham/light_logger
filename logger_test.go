@@ -86,4 +86,21 @@ func TestRotate(t *testing.T) {
     Warn("TAG", "this", "is", 10086)
     Info("TAG", "this", "is", 10086)
     Debug("TAG", "this", "is", 10086)
+
+    Error("TAG", "this", "is", 10086)
+    Warn("TAG", "this", "is", 10086)
+    Info("TAG", "this", "is", 10086)
+    Debug("TAG", "this", "is", 10086)
+
+    Error("TAG", "this", "is", 10086)
+    Warn("TAG", "this", "is", 10086)
+    Info("TAG", "this", "is", 10086)
+    Debug("TAG", "this", "is", 10086)
+
+    Error("TAG", "this", "is", 10086)
+    Warn("TAG", "this", "is", 10086)
+    Info("TAG", "this", "is", 10086)
+    Debug("TAG", "this", "is", 10086)
+
+    time.Sleep(time.Second)
 }
