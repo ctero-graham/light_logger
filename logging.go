@@ -170,7 +170,7 @@ func rotate() {
     if !Rotates {
         return
     }
-    now := time.Now().Format(PostfixFormat)
+    now := time.Now().Add(time.Hour * -1).Format(PostfixFormat)
     for k, v := range logsMap {
         if v.File != os.Stdout && v.File != nil {
             filePath := v.File.Name()
