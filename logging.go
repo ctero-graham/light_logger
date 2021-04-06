@@ -3,11 +3,12 @@
 package light_logger
 
 import (
-    "os"
-    "time"
     "fmt"
-    "runtime"
     "log"
+    "os"
+    "path/filepath"
+    "runtime"
+    "time"
 )
 
 // author: heyd
@@ -22,11 +23,29 @@ var (
 )
 
 const (
-    LEVEL_DEBUG = iota
-    LEVEL_INFO
-    LEVEL_WARN
-    LEVEL_ERROR
+    LevelDebug = iota
+    LevelInfo
+    LevelWarn
+    LevelError
 )
+
+type countedFile struct {
+    *os.File
+    Count int
+}
+
+func (c *countedFile) Ref() {
+    c.Count++
+}
+
+func (c *countedFile) Unref() {
+    c.Count--
+    if c.Count == 0 {
+        if c.File != os.Stdout && c.File != os.Stdin && c.File != os.Stderr {
+            _ = c.Close()
+        }
+    }
+}
 
 type InvalidLogLevel int
 
@@ -54,10 +73,10 @@ func init() {
     errorLogger = newLogger("[ERROR]")
 
     logsMap = map[int]*lightLogger{
-        LEVEL_DEBUG: debugLogger,
-        LEVEL_INFO:  infoLogger,
-        LEVEL_WARN:  warnLogger,
-        LEVEL_ERROR: errorLogger,
+        LevelDebug: debugLogger,
+        LevelInfo:  infoLogger,
+        LevelWarn:  warnLogger,
+        LevelError: errorLogger,
     }
 
     go startLogging()
@@ -86,29 +105,59 @@ func startLogging() {
 
 //  SetLogFile specifies a file path to log to, a prefix and a flag of the logger for a log level.
 //  The available value of flag is same as that in golang's log package.
-func SetLogFile(level int, filePath, prefix string, flag int) error {
-    logger, ok := logsMap[level]
-    if !ok {
-        var e InvalidLogLevel
-        return e
-    } else {
+func SetLogFile(levels []int, filePath, prefix string, flag int) error {
+    var err error
+    filePath, err = filepath.Abs(filePath)
+    if err != nil {
+        return err
+    }
+
+    //  check if designated log file already existed.
+    var existedCountedFile *countedFile
+    for _, v := range logsMap {
+        if v.File.Name() == filePath {
+            //  找到重复的文件了
+            existedCountedFile = v.File
+            break
+        }
+    }
+
+    if existedCountedFile == nil { //  文件还没有打开
         f, e := os.OpenFile(filePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
         if e != nil {
-            fmt.Errorf("open log file error: %s", e.Error())
+            _ = fmt.Errorf("open log file error: %s", e.Error())
             return e
         }
-        oldFile := logger.File
-        if oldFile != nil && oldFile != os.Stdout {
-            oldFile.Close()
+        existedCountedFile = &countedFile{
+            File:  f,
+            Count: 0,
         }
-        resetLogger(logger, f, prefix, flag)
-        return nil
     }
+
+    for _, level := range levels {
+        logger, ok := logsMap[level]
+        if !ok {
+            log.Println("[SetLogFile] ignoring invalid log level:", level)
+        } else {
+            resetLogger(logger, existedCountedFile, prefix, flag)
+        }
+    }
+    return nil
 }
 
 //  resetLogger specifies a file to log to, a prefix and a flag of the logger for a logger.
-func resetLogger(logger *lightLogger, f *os.File, prefix string, flag int) {
+func resetLogger(logger *lightLogger, f *countedFile, prefix string, flag int) {
+    var oldCountedFile *countedFile = nil
+    if logger.File != nil {
+        oldCountedFile = logger.File
+    }
+    defer func() {
+        if oldCountedFile != nil {
+            oldCountedFile.Unref()
+        }
+    }()
     logger.File = f
+    f.Ref()
     logger.Logger.SetOutput(f)
     if prefix != "" {
         logger.Logger.SetPrefix(prefix)
@@ -126,27 +175,27 @@ func resetLogger(logger *lightLogger, f *os.File, prefix string, flag int) {
 }
 
 //  Error logs error messages.
-func Error(data ... interface{}) {
+func Error(data ...interface{}) {
     logTo(errorLogger, data...)
 }
 
 //  Warn logs warn messages.
-func Warn(data ... interface{}) {
+func Warn(data ...interface{}) {
     logTo(warnLogger, data...)
 }
 
 //  Debug logs debug messages.
-func Debug(data ... interface{}) {
+func Debug(data ...interface{}) {
     logTo(debugLogger, data...)
 }
 
 //  Info logs info messages.
-func Info(data ... interface{}) {
+func Info(data ...interface{}) {
     logTo(infoLogger, data...)
 }
 
 //  logTo logs a given message to the specified logger.
-func logTo(logger *lightLogger, data ... interface{}) {
+func logTo(logger *lightLogger, data ...interface{}) {
     if logger.Flag&(log.Lshortfile|log.Llongfile) != 0 {
         _, file, line, _ := runtime.Caller(2)
         if logger.Flag&log.Lshortfile != 0 {
@@ -170,17 +219,17 @@ func rotate() {
     if !Rotates {
         return
     }
+    setTimer() //  定下一次的闹钟
     now := time.Now().Add(time.Hour * -1).Format(PostfixFormat)
     for k, v := range logsMap {
-        if v.File != os.Stdout && v.File != nil {
+        if v.File != nil && (v.File.File != os.Stdout && v.File.File != os.Stderr && v.File.File != os.Stdin) {
             filePath := v.File.Name()
-            v.File.Close()
+            _ = v.File.Close()
             v.File = nil
-            os.Rename(filePath, filePath+"."+now)
-            SetLogFile(k, filePath, v.Logger.Prefix(), v.Flag)
+            _ = os.Rename(filePath, filePath+"."+now)
+            _ = SetLogFile([]int{k}, filePath, v.Logger.Prefix(), v.Flag)
         }
     }
-    setTimer() //  定下一次的闹钟
 }
 
 //  setTimer will call setNextTimer to set a timer which will trigger the next rotation work.

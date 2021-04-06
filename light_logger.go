@@ -10,16 +10,20 @@ import (
 type lightLogger struct {
     C      chan []interface{}
     Logger *log.Logger
-    File   *os.File
+    File   *countedFile
     Flag   int
 }
 
 func newLogger(prefix string) *lightLogger {
+    cntFile := &countedFile{
+        File:  os.Stdout,
+        Count: 0,
+    }
     logger := &lightLogger{
         Flag:   log.Ldate | log.Ltime | log.Lshortfile,
-        File:   os.Stdout,
+        File:   cntFile,
         C:      make(chan []interface{}, 100),
-        Logger: log.New(os.Stdout, prefix, log.Ldate|log.Ltime),
+        Logger: log.New(cntFile, prefix, log.Ldate|log.Ltime),
     }
     return logger
 }

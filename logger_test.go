@@ -58,7 +58,7 @@ func TestRotate(t *testing.T) {
     }
     time.Sleep(time.Second)
 
-    if SetLogFile(LEVEL_DEBUG, "debug.log", "", log.Llongfile|log.Ltime|log.Ldate) != nil {
+    if SetLogFile(Debug, "debug.log", "", log.Llongfile|log.Ltime|log.Ldate) != nil {
         t.Fatal()
     }
 
@@ -69,7 +69,7 @@ func TestRotate(t *testing.T) {
 
     time.Sleep(time.Second)
 
-    if SetLogFile(LEVEL_INFO, "info.log", "", 0) != nil {
+    if SetLogFile(Info, "info.log", "", 0) != nil {
         t.Fatal()
     }
 
